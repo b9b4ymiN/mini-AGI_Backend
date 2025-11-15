@@ -264,7 +264,7 @@ ZAI_BASE_URL=https://api.z.ai/api/coding/paas/v4
 | `ZAI_API_KEY` | Z.AI API key | None | Required for Z.AI |
 | `ZAI_BASE_URL` | Z.AI endpoint | `https://api.z.ai/api/coding/paas/v4` | Any valid URL |
 
-📖 **Complete Guide:** See [CONFIGURATION.md](CONFIGURATION.md) for detailed configuration instructions, examples, and troubleshooting.
+📖 **Complete Guide:** Configuration details are summarized in the "Merged documentation" section below (see the "Configuration" bullet).
 
 ---
 
@@ -396,7 +396,7 @@ curl -X POST http://localhost:8000/chat \
 curl http://localhost:8000/llm/info
 ```
 
-📖 **Complete Testing Guide:** See [TESTING.md](TESTING.md) for detailed testing instructions.
+📖 **Complete Testing Guide:** Testing instructions are summarized in the "Merged documentation" section below (see the "Testing" bullet).
 
 ---
 
@@ -589,3 +589,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 [⬆ Back to Top](#-mini-agi-backend)
 
 </div>
+
+---

@@ -15,10 +15,6 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
-# Start Mock Ollama Server (port 11434)
-echo "Starting Mock Ollama Server (port 11434)..."
-python mock_ollama_server.py &
-OLLAMA_PID=$!
 
 # Wait a bit
 sleep 1
@@ -48,7 +44,7 @@ echo ""
 echo "=========================================="
 echo "All servers started!"
 echo "=========================================="
-echo "Mock Ollama:     http://127.0.0.1:11434"
+ 
 echo "MCP Filesystem:  http://127.0.0.1:8001"
 echo "MCP Trader:      http://127.0.0.1:8002"
 echo "Backend API:     http://127.0.0.1:8000"

@@ -53,3 +53,33 @@ htmlcov/
 # Temporary files
 *.tmp
 *.bak
+
+# AI / ML model artifacts and caches
+# Model checkpoints and weight files
+*.ckpt
+*.pth
+*.pt
+*.safetensors
+*.bin
+*.onnx
+*.h5
+# TensorFlow checkpoint index/data
+*.index
+*data-00000-of-00001
+# Common serialized bundles
+*.tar.gz
+*.zip
+# Model caches and download folders (limited to common locations)
+.cache/transformers/
+.cache/huggingface/
+model_cache/
+.model_cache/
+hf_models/
+checkpoints/
+weights/
+# Local AI helper folders
+ai/
+.ollama/
+
+.claude/
+CLAUDE.md
