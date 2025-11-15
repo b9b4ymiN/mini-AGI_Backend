@@ -4,7 +4,7 @@ Agent system with registry and execution logic.
 
 from typing import Dict, Any
 import json
-from .llm import call_ollama
+from .llm import call_llm
 
 
 # ============================================================================
@@ -118,7 +118,7 @@ def run_agent(
     })
 
     # 3. Call LLM
-    raw_response = call_ollama(messages)
+    raw_response = call_llm(messages)
 
     # 4. Parse JSON with fallbacks
     data = None

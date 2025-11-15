@@ -19,6 +19,36 @@ python test_system.py
 
 ---
 
+## 🔧 Configuration (NEW!)
+
+**Multiple LLM Providers Supported:**
+- **Ollama** (local, free) - Default
+- **Z.AI** (cloud API with Thai support) - New!
+
+**Quick Configuration:**
+
+```bash
+# 1. Copy example config
+cp .env.example .env
+
+# 2. Edit .env to choose your provider
+# For Ollama (default):
+LLM_PROVIDER=ollama
+LLM_MODEL=mistral
+
+# For Z.AI:
+LLM_PROVIDER=zai
+LLM_MODEL=glm-4.6
+ZAI_API_KEY=your-api-key
+
+# 3. Start server (config auto-loaded!)
+uvicorn backend.main:app --reload --port 8000
+```
+
+📖 **See [CONFIGURATION.md](CONFIGURATION.md) for complete guide** with examples, all options, and troubleshooting.
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -26,19 +56,22 @@ mini-AGI_Backend/
 ├── .claude/
 │   └── claude-instructions.md  ← Claude Code configuration
 ├── backend/                    ← Main backend implementation
-│   ├── main.py                ← FastAPI app
+│   ├── main.py                ← FastAPI app (with .env loader)
 │   └── orchestrator/
 │       ├── __init__.py
-│       ├── llm.py             ← Ollama integration
+│       ├── llm.py             ← Multi-provider LLM (Ollama + Z.AI)
 │       ├── agents.py          ← Agent system
 │       ├── tools.py           ← Tool implementations
 │       ├── core.py            ← Orchestration loop
 │       └── models.py          ← Pydantic models
+├── .env.example               ← Configuration template
+├── .gitignore                 ← Git ignore rules
 ├── mock_ollama_server.py      ← Mock Ollama for testing
 ├── mock_mcp_server.py         ← Mock MCP servers for testing
 ├── test_system.py             ← Automated test suite
 ├── start_all_mock.sh          ← Start all mock servers at once
-├── requirements.txt           ← Python dependencies
+├── requirements.txt           ← Python dependencies (incl. python-dotenv)
+├── CONFIGURATION.md           ← Configuration guide (NEW!)
 ├── TESTING.md                 ← Comprehensive testing guide
 ├── SPECS.md                   ← Full implementation specification
 ├── CLAUDE.md                  ← AI assistant guide
@@ -266,6 +299,7 @@ timeout=60  # instead of 30
 
 ## 📚 Documentation
 
+- **Configuration Guide:** `CONFIGURATION.md` - LLM providers, models, environment setup
 - **Testing Guide:** `TESTING.md` - Complete testing instructions with mock servers
 - **Quick Reference:** `.claude/claude-instructions.md` - For Claude Code
 - **AI Assistant Guide:** `CLAUDE.md` - Comprehensive guide for AI assistants

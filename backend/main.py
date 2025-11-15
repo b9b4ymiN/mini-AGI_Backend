@@ -3,10 +3,15 @@ FastAPI application for Mini-AGI Backend.
 Main entry point for the orchestration system.
 """
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .orchestrator.models import ChatRequest, ChatResponse
 from .orchestrator.core import orchestrate
+from .orchestrator.llm import get_provider_info
 
 app = FastAPI(
     title="Mini-AGI Backend",
@@ -66,3 +71,9 @@ def chat(req: ChatRequest) -> ChatResponse:
 def health():
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+@app.get("/llm/info")
+def llm_info():
+    """Get current LLM provider configuration."""
+    return get_provider_info()
