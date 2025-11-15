@@ -1,22 +1,48 @@
 # Mini-AGI Backend - Setup Guide
 
+## ⚡ Quick Test (No Ollama Required!)
+
+Want to test immediately without installing Ollama? Use our mock servers:
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Start all mock servers (one command!)
+./start_all_mock.sh
+
+# 3. In another terminal, run tests
+python test_system.py
+```
+
+✅ **System is ready to use!** See [TESTING.md](TESTING.md) for detailed testing guide.
+
+---
+
 ## 📁 Project Structure
 
 ```
-your-project/
+mini-AGI_Backend/
 ├── .claude/
-│   └── instructions.md    ← Claude Code configuration
-├── backend/
-│   ├── main.py           ← FastAPI app
+│   └── claude-instructions.md  ← Claude Code configuration
+├── backend/                    ← Main backend implementation
+│   ├── main.py                ← FastAPI app
 │   └── orchestrator/
 │       ├── __init__.py
-│       ├── llm.py
-│       ├── agents.py
-│       ├── tools.py
-│       ├── core.py
-│       └── models.py
-├── SPECS.md              ← Full implementation specification
-└── README.md             ← This file
+│       ├── llm.py             ← Ollama integration
+│       ├── agents.py          ← Agent system
+│       ├── tools.py           ← Tool implementations
+│       ├── core.py            ← Orchestration loop
+│       └── models.py          ← Pydantic models
+├── mock_ollama_server.py      ← Mock Ollama for testing
+├── mock_mcp_server.py         ← Mock MCP servers for testing
+├── test_system.py             ← Automated test suite
+├── start_all_mock.sh          ← Start all mock servers at once
+├── requirements.txt           ← Python dependencies
+├── TESTING.md                 ← Comprehensive testing guide
+├── SPECS.md                   ← Full implementation specification
+├── CLAUDE.md                  ← AI assistant guide
+└── README.md                  ← This file
 ```
 
 ## 🚀 Quick Start
@@ -240,8 +266,10 @@ timeout=60  # instead of 30
 
 ## 📚 Documentation
 
-- **Quick Reference:** `.claude/instructions.md`
-- **Full Specification:** `SPECS.md`
+- **Testing Guide:** `TESTING.md` - Complete testing instructions with mock servers
+- **Quick Reference:** `.claude/claude-instructions.md` - For Claude Code
+- **AI Assistant Guide:** `CLAUDE.md` - Comprehensive guide for AI assistants
+- **Full Specification:** `SPECS.md` - Detailed technical specification
 - **API Docs:** http://localhost:8000/docs (when server running)
 
 ## 🔄 Development Workflow
