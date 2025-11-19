@@ -19,6 +19,7 @@ class OrchestratorEvent(BaseModel):
 class ChatRequest(BaseModel):
     """Request format matching assistant-ui."""
     messages: List[Dict[str, Any]]
+    persona: Optional[str] = None  # Optional persona ID (e.g., "oi-trader")
 
 
 class ChatResponse(BaseModel):

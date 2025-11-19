@@ -1,0 +1,132 @@
+# =============================================================================
+# Mini-AGI Backend - Production Docker Compose Configuration
+# =============================================================================
+# This is a production-ready configuration with:
+# - No exposed Ollama port (internal only)
+# - Health checks enabled
+# - Resource limits
+# - Logging configuration
+# - Restart policies
+#
+# Usage:
+#   docker-compose -f docker-compose.prod.yml up -d
+#   docker-compose -f docker-compose.prod.yml logs -f
+#   docker-compose -f docker-compose.prod.yml down
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backend Service - Mini-AGI FastAPI Application
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mini-agi-backend-prod
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      # LLM Provider Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - LLM_MODEL=${LLM_MODEL:-llama3.1:8b}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.2}
+
+      # Ollama Configuration
+      - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
+
+      # Z.AI Configuration
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
+      - ZAI_BASE_URL=${ZAI_BASE_URL:-https://api.z.ai/api/coding/paas/v4}
+
+      # Application Configuration
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - MAX_ORCHESTRATION_STEPS=${MAX_ORCHESTRATION_STEPS:-10}
+    volumes:
+      # Mount instruction files for personas (read-only)
+      - ./backend/instruction:/app/backend/instruction:ro
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - mini-agi-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Ollama Service - Local LLM Server (Internal Only)
+  # ---------------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-prod
+    # DO NOT expose port in production (internal network only)
+    # ports:
+    #   - "11434:11434"
+    volumes:
+      # Persist Ollama models
+      - ollama-data:/root/.ollama
+    networks:
+      - mini-agi-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # GPU support for production (uncomment if you have NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  mini-agi-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  ollama-data:
+    driver: local
+    # For production, consider using named volume with backup strategy

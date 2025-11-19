@@ -9,13 +9,14 @@ from .agents import run_agent, AGENTS
 from .tools import TOOLS
 
 
-def orchestrate(user_input: str, max_steps: int = 10) -> Tuple[str, List[OrchestratorEvent]]:
+def orchestrate(user_input: str, max_steps: int = 10, system_instruction: str = "") -> Tuple[str, List[OrchestratorEvent]]:
     """
     Main orchestration loop.
 
     Args:
         user_input: User's query or instruction
         max_steps: Maximum orchestration steps (default: 10)
+        system_instruction: Optional custom system instruction to prepend to all agents
 
     Returns:
         Tuple of (final_answer, event_list)
@@ -32,7 +33,8 @@ def orchestrate(user_input: str, max_steps: int = 10) -> Tuple[str, List[Orchest
         result = run_agent(
             current_agent,
             current_query,
-            extra_context="\n".join(context_log)
+            extra_context="\n".join(context_log),
+            custom_system_instruction=system_instruction
         )
 
         # 2. Extract fields

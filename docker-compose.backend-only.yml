@@ -1,0 +1,67 @@
+# =============================================================================
+# Mini-AGI Backend - Backend Only (No Ollama)
+# =============================================================================
+# Use this configuration when:
+# - Using Z.AI cloud API
+# - Using external Ollama server
+# - Ollama is running on host machine
+#
+# Usage:
+#   docker-compose -f docker-compose.backend-only.yml up -d
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backend Service - Mini-AGI FastAPI Application
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mini-agi-backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      # LLM Provider Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER:-zai}
+      - LLM_MODEL=${LLM_MODEL:-glm-4.6}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.2}
+
+      # Ollama Configuration (if using external Ollama)
+      # Use host.docker.internal for Windows/Mac to access host machine
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+
+      # Z.AI Configuration
+      - ZAI_API_KEY=${ZAI_API_KEY}
+      - ZAI_BASE_URL=${ZAI_BASE_URL:-https://api.z.ai/api/coding/paas/v4}
+
+      # Application Configuration
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - MAX_ORCHESTRATION_STEPS=${MAX_ORCHESTRATION_STEPS:-10}
+    volumes:
+      # Mount instruction files for personas (read-only)
+      - ./backend/instruction:/app/backend/instruction:ro
+    networks:
+      - mini-agi-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  mini-agi-network:
+    driver: bridge

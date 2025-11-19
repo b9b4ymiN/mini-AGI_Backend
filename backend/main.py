@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .orchestrator.models import ChatRequest, ChatResponse
 from .orchestrator.core import orchestrate
 from .orchestrator.llm import get_provider_info
+from .orchestrator.personas import get_persona_or_custom, get_available_personas
 
 app = FastAPI(
     title="Mini-AGI Backend",
@@ -36,14 +37,46 @@ def chat(req: ChatRequest) -> ChatResponse:
 
     Expects assistant-ui message format:
     {
+      "persona": "oi-trader",  // Optional: Load predefined persona
       "messages": [
+        {
+          "role": "system",
+          "content": [{"type": "text", "text": "Custom system instructions..."}]
+        },
         {
           "role": "user",
           "content": [{"type": "text", "text": "..."}]
         }
       ]
     }
+
+    Persona takes priority over system messages in the messages array.
+    If no persona is specified, falls back to system message from messages array.
     """
+    # Extract system message from messages array (optional)
+    custom_system_instruction = ""
+
+    for msg in req.messages:
+        if msg.get("role") == "system":
+            content = msg.get("content", [])
+
+            if content and isinstance(content, list):
+                first_item = content[0]
+
+                if isinstance(first_item, dict) and first_item.get("type") == "text":
+                    custom_system_instruction = first_item.get("text", "")
+                    break
+            elif isinstance(content, str):
+                # Support simple string format
+                custom_system_instruction = content
+                break
+
+    # Get system instruction from persona or custom (persona takes priority)
+    system_instruction = get_persona_or_custom(
+        persona_id=req.persona,
+        custom_instruction=custom_system_instruction
+    )
+
     # Extract latest user message
     last_user_msg = ""
 
@@ -57,12 +90,16 @@ def chat(req: ChatRequest) -> ChatResponse:
                 if isinstance(first_item, dict) and first_item.get("type") == "text":
                     last_user_msg = first_item.get("text", "")
                     break
+            elif isinstance(content, str):
+                # Support simple string format
+                last_user_msg = content
+                break
 
     if not last_user_msg:
         last_user_msg = "No text content provided."
 
-    # Run orchestration
-    answer, events = orchestrate(last_user_msg)
+    # Run orchestration with optional system instruction
+    answer, events = orchestrate(last_user_msg, system_instruction=system_instruction)
 
     return ChatResponse(answer=answer, events=events)
 
@@ -77,3 +114,14 @@ def health():
 def llm_info():
     """Get current LLM provider configuration."""
     return get_provider_info()
+
+
+@app.get("/personas")
+def list_personas():
+    """
+    Get list of available personas.
+
+    Returns:
+        List of persona objects with id, name, file, and exists status
+    """
+    return {"personas": get_available_personas()}

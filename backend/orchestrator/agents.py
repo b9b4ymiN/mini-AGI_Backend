@@ -82,7 +82,8 @@ When you need to:
 def run_agent(
     agent_name: str,
     user_content: str,
-    extra_context: str = ""
+    extra_context: str = "",
+    custom_system_instruction: str = ""
 ) -> Dict[str, Any]:
     """
     Execute an agent and parse its JSON response.
@@ -91,6 +92,7 @@ def run_agent(
         agent_name: Name of agent from AGENTS registry
         user_content: Main user query or instruction
         extra_context: Optional context from previous steps
+        custom_system_instruction: Optional custom system instruction to prepend
 
     Returns:
         Dict with keys: thought, action, tool, target_agent, args, answer
@@ -102,20 +104,27 @@ def run_agent(
     agent_cfg = AGENTS[agent_name]
 
     # 2. Build messages
-    messages = [
-        {"role": "system", "content": agent_cfg["system"]},
-    ]
+    # Merge all system content into one message (some LLMs don't support multiple system messages)
+    system_parts = []
 
+    # Add custom system instruction first if provided
+    if custom_system_instruction:
+        system_parts.append(f"CUSTOM USER INSTRUCTIONS:\n{custom_system_instruction}\n")
+
+    # Add agent's base system prompt
+    system_parts.append(agent_cfg["system"])
+
+    # Add context from previous steps if any
     if extra_context:
-        messages.append({
-            "role": "system",
-            "content": f"Context from previous steps:\n{extra_context}"
-        })
+        system_parts.append(f"\nContext from previous steps:\n{extra_context}")
 
-    messages.append({
-        "role": "user",
-        "content": user_content
-    })
+    # Combine all system parts into one message
+    combined_system = "\n---\n".join(system_parts)
+
+    messages = [
+        {"role": "system", "content": combined_system},
+        {"role": "user", "content": user_content}
+    ]
 
     # 3. Call LLM
     raw_response = call_llm(messages)

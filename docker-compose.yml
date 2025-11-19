@@ -1,0 +1,56 @@
+ 
+services:
+  # ---------------------------------------------------------------------------
+  # Backend Service - Mini-AGI FastAPI Application
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mini-agi-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM Provider Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - LLM_MODEL=${LLM_MODEL:-llama3.1:8b}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.2}
+
+      # Ollama Configuration (use 'ollama' service name for internal network)
+      - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
+
+      # Z.AI Configuration (if using Z.AI)
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
+      - ZAI_BASE_URL=${ZAI_BASE_URL:-https://api.z.ai/api/coding/paas/v4}
+
+      # Application Configuration
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      - MAX_ORCHESTRATION_STEPS=${MAX_ORCHESTRATION_STEPS:-10}
+    volumes:
+      # Mount instruction files for personas
+      - ./backend/instruction:/app/backend/instruction:ro
+      # Optional: Mount for development hot-reload
+      # - ./backend:/app/backend
+ 
+    networks:
+      - mini-agi-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+ 
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  mini-agi-network:
+    driver: bridge
+
+deploy:
+  resources:
+    limits:
+      cpus: '0.50'
+      memory: '512M'

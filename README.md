@@ -171,6 +171,23 @@ uvicorn backend.main:app --reload --port 8000
 curl http://localhost:8000/health
 ```
 
+### Option 3: Docker Runtime
+
+Containerized workflow for consistent deployments:
+
+```bash
+# 1. Build image (run from repo root)
+docker build -t mini-agi-backend .
+
+# 2. Copy env config if needed
+cp .env.example .env && edit .env
+
+# 3. Start container with env + port mapping
+docker run --rm -p 8000:8000 --env-file .env mini-agi-backend
+```
+
+The API will be available at `http://localhost:8000` and the interactive docs remain at `/docs`. Mount volumes or override env vars as needed for advanced setups.
+
 **Access API Docs:** http://localhost:8000/docs
 
 ---
@@ -201,7 +218,13 @@ pip install -r requirements.txt
 
 # Verify installation
 python -c "from backend.orchestrator.llm import get_provider_info; print('✅ Installation successful!')"
+
+# Run project
+uvicorn backend.main:app --reload
+
 ```
+
+
 
 ### Docker Installation (Optional)
 
