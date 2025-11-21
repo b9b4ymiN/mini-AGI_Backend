@@ -2,27 +2,59 @@
 Main orchestration loop for coordinating agents and tools.
 """
 
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 import json
 from .models import OrchestratorEvent
 from .agents import run_agent, AGENTS
 from .tools import TOOLS
+from . import memory
 
 
-def orchestrate(user_input: str, max_steps: int = 10, system_instruction: str = "") -> Tuple[str, List[OrchestratorEvent]]:
+def orchestrate(
+    user_input: str,
+    max_steps: int = 10,
+    system_instruction: str = "",
+    session_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    persona: Optional[str] = None
+) -> Tuple[str, List[OrchestratorEvent], str, bool]:
     """
-    Main orchestration loop.
+    Main orchestration loop with conversation memory.
 
     Args:
         user_input: User's query or instruction
         max_steps: Maximum orchestration steps (default: 10)
         system_instruction: Optional custom system instruction to prepend to all agents
+        session_id: Optional session ID for conversation continuity
+        user_id: Optional user ID for personalization
+        persona: Optional persona used
 
     Returns:
-        Tuple of (final_answer, event_list)
+        Tuple of (final_answer, event_list, session_id, context_used)
     """
+    # Get or create session
+    session_id = memory.get_or_create_session(session_id, user_id)
+
+    # Retrieve conversation context
+    conversation_context = memory.get_recent_context(session_id, max_turns=5, max_chars=2000)
+
+    # Retrieve user facts (long-term memory)
+    user_facts = memory.format_memory_facts(user_id) if user_id else ""
+
+    # Combine all context
+    full_context = []
+    if user_facts:
+        full_context.append(user_facts)
+    if conversation_context:
+        full_context.append(conversation_context)
+
+    context_used = bool(full_context)
+
     # Initialize state
     context_log: List[str] = []
+    if full_context:
+        context_log.append("\n\n".join(full_context))
+
     events: List[OrchestratorEvent] = []
     current_agent: str = "orchestrator"
     current_query: str = user_input
@@ -64,8 +96,16 @@ def orchestrate(user_input: str, max_steps: int = 10, system_instruction: str = 
 
         # 5. Handle action
         if action == "final":
-            # Done - return answer
-            return (answer or "[NO ANSWER]", events)
+            # Done - save conversation and return answer
+            final_answer = answer or "[NO ANSWER]"
+            memory.save_conversation(
+                session_id=session_id,
+                user_message=user_input,
+                ai_response=final_answer,
+                user_id=user_id,
+                persona=persona
+            )
+            return (final_answer, events, session_id, context_used)
 
         elif action == "use_tool":
             # Execute tool
@@ -110,7 +150,12 @@ def orchestrate(user_input: str, max_steps: int = 10, system_instruction: str = 
             )
 
     # Max steps reached without final
-    return (
-        "[MAX STEPS REACHED - No final answer provided]",
-        events
+    final_answer = "[MAX STEPS REACHED - No final answer provided]"
+    memory.save_conversation(
+        session_id=session_id,
+        user_message=user_input,
+        ai_response=final_answer,
+        user_id=user_id,
+        persona=persona
     )
+    return (final_answer, events, session_id, context_used)

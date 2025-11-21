@@ -54,6 +54,12 @@ htmlcov/
 *.tmp
 *.bak
 
+# Database files (conversation memory)
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/*.db-wal
+backend/data/*.db-shm
+
 # AI / ML model artifacts and caches
 # Model checkpoints and weight files
 *.ckpt

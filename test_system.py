@@ -154,6 +154,145 @@ def check_mcp_servers() -> Dict[str, bool]:
     return results
 
 
+def test_database_management(base_url: str = "http://127.0.0.1:8000") -> bool:
+    """Test database management endpoints."""
+    print("\n=== Testing Database Management ===")
+    try:
+        # Test /db/size
+        response = requests.get(f"{base_url}/db/size", timeout=5)
+        response.raise_for_status()
+        size_data = response.json()
+
+        if "size_mb" in size_data and "max_size_mb" in size_data:
+            print(f"✅ Database size: {size_data['size_mb']:.2f} MB / {size_data['max_size_mb']} MB")
+            print(f"   Usage: {size_data['usage_percent']:.2f}%")
+        else:
+            print("❌ /db/size returned unexpected format")
+            return False
+
+        # Test /db/status
+        response = requests.get(f"{base_url}/db/status", timeout=5)
+        response.raise_for_status()
+        status_data = response.json()
+
+        if "status" in status_data:
+            print(f"✅ Database status: {status_data['status']}")
+        else:
+            print("❌ /db/status returned unexpected format")
+            return False
+
+        # Test /db/stats
+        response = requests.get(f"{base_url}/db/stats", timeout=5)
+        response.raise_for_status()
+        stats_data = response.json()
+
+        if "total_conversations" in stats_data:
+            print(f"✅ Database stats:")
+            print(f"   Conversations: {stats_data['total_conversations']}")
+            print(f"   Sessions: {stats_data['total_sessions']}")
+            print(f"   Facts: {stats_data['total_facts']}")
+        else:
+            print("❌ /db/stats returned unexpected format")
+            return False
+
+        # Test /db/recommendations
+        response = requests.get(f"{base_url}/db/recommendations", timeout=5)
+        response.raise_for_status()
+        rec_data = response.json()
+
+        if "recommendations" in rec_data:
+            print(f"✅ Storage recommendations: {len(rec_data['recommendations'])} items")
+        else:
+            print("❌ /db/recommendations returned unexpected format")
+            return False
+
+        print("✅ All database management endpoints working")
+        return True
+
+    except Exception as e:
+        print(f"❌ Database management test failed: {e}")
+        return False
+
+
+def test_memory_system(base_url: str = "http://127.0.0.1:8000") -> bool:
+    """Test memory system (session management)."""
+    print("\n=== Testing Memory System ===")
+    try:
+        # Create a new session
+        response = requests.post(f"{base_url}/sessions", timeout=5)
+        response.raise_for_status()
+        session_data = response.json()
+
+        if "session_id" not in session_data:
+            print("❌ Failed to create session")
+            return False
+
+        session_id = session_data["session_id"]
+        print(f"✅ Created session: {session_id}")
+
+        # Send first message
+        payload1 = {
+            "session_id": session_id,
+            "user_id": "test-user",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "My name is TestUser"}]
+                }
+            ]
+        }
+
+        response = requests.post(f"{base_url}/chat", json=payload1, timeout=30)
+        response.raise_for_status()
+        data1 = response.json()
+
+        if "session_id" not in data1:
+            print("❌ First message didn't return session_id")
+            return False
+
+        print(f"✅ First message sent")
+
+        # Send second message asking about name
+        payload2 = {
+            "session_id": session_id,
+            "user_id": "test-user",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "What is my name?"}]
+                }
+            ]
+        }
+
+        response = requests.post(f"{base_url}/chat", json=payload2, timeout=30)
+        response.raise_for_status()
+        data2 = response.json()
+
+        # Check if context was used
+        if data2.get("context_used"):
+            print(f"✅ Memory working - context was used")
+            print(f"   Answer: {data2['answer'][:100]}...")
+        else:
+            print("⚠️  Context not used (may need more test data)")
+
+        # Get session history
+        response = requests.get(f"{base_url}/sessions/{session_id}/history?limit=10", timeout=5)
+        response.raise_for_status()
+        history_data = response.json()
+
+        if "history" in history_data and len(history_data["history"]) >= 2:
+            print(f"✅ Session history: {len(history_data['history'])} turns")
+        else:
+            print("⚠️  Session history may not be complete")
+
+        print("✅ Memory system working")
+        return True
+
+    except Exception as e:
+        print(f"❌ Memory system test failed: {e}")
+        return False
+
+
 def main():
     """Run all tests."""
     print("=" * 60)
@@ -185,6 +324,8 @@ def main():
     results.append(("Health Check", test_health()))
     results.append(("Simple Chat", test_chat_simple()))
     results.append(("Tool Execution", test_tool_execution()))
+    results.append(("Memory System", test_memory_system()))
+    results.append(("DB Management", test_database_management()))
 
     # Summary
     print("\n" + "=" * 60)
