@@ -78,6 +78,7 @@ curl -X POST http://localhost:8000/chat \
 
 | Document | Description |
 |----------|-------------|
+| **[MEMORY_USAGE_GUIDE.md](MEMORY_USAGE_GUIDE.md)** | **⭐ How to use memory correctly** |
 | **[API_GUIDE.md](API_GUIDE.md)** | Complete API reference & all examples |
 | **[MEMORY_SYSTEM.md](MEMORY_SYSTEM.md)** | Memory system detailed guide |
 | **[DEPLOYMENT.md](DEPLOYMENT.md)** | Deployment options |

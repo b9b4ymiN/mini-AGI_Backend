@@ -127,7 +127,7 @@ def call_zai(messages: List[Dict[str, str]], model: str = MODEL_NAME) -> str:
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        response = requests.post(url, headers=headers, json=payload, timeout=360)
         response.raise_for_status()
         data = response.json()
 

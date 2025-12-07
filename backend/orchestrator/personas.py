@@ -16,6 +16,8 @@ INSTRUCTION_DIR = Path(__file__).parent.parent / "instruction"
 # Persona registry mapping persona IDs to instruction filenames
 PERSONA_REGISTRY: Dict[str, str] = {
     "oi-trader": "AI_System_Instructions_Trading_Analysis.md",
+    "ks-summary": "KS_Summary.md",
+    "ks-discord" : "ks_discord_version.md",
     # Add more personas here as you create instruction files
     # "example": "example_instructions.md",
 }

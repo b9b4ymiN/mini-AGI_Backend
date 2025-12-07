@@ -19,7 +19,26 @@ Complete guide to Mini-AGI Backend documentation.
 
 ---
 
-### 2. **API_GUIDE.md** (Main Reference)
+### 2. **MEMORY_USAGE_GUIDE.md** (⭐ Important!)
+**How to use conversation memory correctly**
+
+- Step-by-step memory usage
+- Common mistakes and fixes
+- Session ID management
+- Troubleshooting memory issues
+- Best practices
+- Example scripts (Bash, PowerShell, JavaScript)
+
+**Use when:** Memory is not working or AI doesn't remember conversations
+
+**⚠️ Read this if:**
+- AI says "I don't know your name" after you told it
+- `context_used: false` in responses
+- Different session_id each time
+
+---
+
+### 3. **API_GUIDE.md** (Main Reference)
 **Complete API documentation and examples**
 
 - All API endpoints
@@ -37,12 +56,13 @@ Complete guide to Mini-AGI Backend documentation.
 - Session management
 - Conversation search
 - User facts (long-term learning)
+- Database management (Oracle Cloud)
 - Configuration
 - Error handling
 
 ---
 
-### 3. **MEMORY_SYSTEM.md** (Deep Dive)
+### 4. **MEMORY_SYSTEM.md** (Deep Dive)
 **Detailed memory system architecture**
 
 - Memory architecture
@@ -56,7 +76,7 @@ Complete guide to Mini-AGI Backend documentation.
 
 ---
 
-### 4. **DEPLOYMENT.md** (Full Setup)
+### 5. **DEPLOYMENT.md** (Full Setup)
 **Complete deployment guide with Ollama**
 
 - Prerequisites
@@ -78,6 +98,9 @@ Complete guide to Mini-AGI Backend documentation.
 **Get started quickly**
 → Start with **README.md** then **API_GUIDE.md**
 
+**Fix memory not working** ⚠️
+→ Read **MEMORY_USAGE_GUIDE.md** (Common issues & solutions)
+
 **Integrate the API**
 → Read **API_GUIDE.md** (has all examples)
 
@@ -94,7 +117,7 @@ Complete guide to Mini-AGI Backend documentation.
 → See **API_GUIDE.md** (Personas section)
 
 **Debug issues**
-→ Check **API_GUIDE.md** (Troubleshooting section)
+→ Check **API_GUIDE.md** or **MEMORY_USAGE_GUIDE.md** (Troubleshooting sections)
 
 ---
 
@@ -112,6 +135,12 @@ When backend is running:
 
 ```
 README.md (Overview)
+    ├─► MEMORY_USAGE_GUIDE.md (⭐ Memory How-To)
+    │       ├─► Step-by-step examples
+    │       ├─► Common mistakes
+    │       ├─► Troubleshooting
+    │       └─► Best practices
+    │
     ├─► API_GUIDE.md (Main Reference)
     │       ├─► Quick Start
     │       ├─► All Endpoints
@@ -137,8 +166,9 @@ README.md (Overview)
 | File | Size | Purpose |
 |------|------|---------|
 | README.md | 3.7 KB | Quick overview |
-| API_GUIDE.md | 18 KB | Complete API reference |
-| MEMORY_SYSTEM.md | 12 KB | Memory system guide |
+| MEMORY_USAGE_GUIDE.md | 15 KB | **How to use memory** |
+| API_GUIDE.md | 20 KB | Complete API reference |
+| MEMORY_SYSTEM.md | 12 KB | Memory system architecture |
 | DEPLOYMENT.md | 12 KB | Full deployment guide |
 
 ---
@@ -151,6 +181,14 @@ README.md (Overview)
 - ✅ Basic examples
 - ✅ Architecture diagram
 - ✅ Documentation links
+
+### MEMORY_USAGE_GUIDE.md
+- ✅ Step-by-step memory usage
+- ✅ Common mistakes (session_id handling)
+- ✅ Troubleshooting guide
+- ✅ Best practices
+- ✅ Example scripts (Bash, PowerShell, JavaScript)
+- ✅ Memory verification checklist
 
 ### API_GUIDE.md
 - ✅ All API endpoints
