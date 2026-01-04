@@ -18,6 +18,10 @@ PERSONA_REGISTRY: Dict[str, str] = {
     "oi-trader": "AI_System_Instructions_Trading_Analysis.md",
     "ks-summary": "KS_Summary.md",
     "ks-discord" : "ks_discord_version.md",
+    "explainer": "The_watch.md",
+    "deep-thinking": "Ultimate_thinking.md",
+    "deep_summary": "deep_summary.md",
+    "discord-sum" : "discord_sum.md",
     # Add more personas here as you create instruction files
     # "example": "example_instructions.md",
 }

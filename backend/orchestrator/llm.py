@@ -28,7 +28,7 @@ import requests
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.2"))
-LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2000"))
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "8000"))  # Increased from 2000 to handle long Thai responses
 
 # Ollama configuration
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
@@ -57,6 +57,15 @@ _RETRY_STATUS = {429, 500, 502, 503, 504}
 
 class LlmProviderError(Exception):
     """Raised when an LLM provider call fails."""
+
+    def __init__(self, message: str, user_message: str = None):
+        """
+        Args:
+            message: Detailed error message for logging
+            user_message: Safe message to show to users (optional)
+        """
+        super().__init__(message)
+        self.user_message = user_message or message
 
 
 def _sleep_backoff(attempt: int, retry_after: Optional[str] = None) -> None:
@@ -108,9 +117,31 @@ def _post_with_retry(
                 resp.raise_for_status()
             except requests.exceptions.HTTPError as e:
                 snippet = (resp.text or "")[:2000]
+                user_msg = None
+
+                # Try to parse ZAI error response for user-friendly message
+                try:
+                    error_data = json.loads(resp.text)
+                    if "error" in error_data:
+                        error_info = error_data["error"]
+                        error_code = error_info.get("code", "")
+                        error_msg = error_info.get("message", "")
+
+                        # Handle content moderation errors (code 1301)
+                        if error_code == "1301":
+                            user_msg = (
+                                "Your message was flagged by our content filter. "
+                                "Please rephrase your request and try again."
+                            )
+                        elif error_msg:
+                            user_msg = error_msg
+                except (json.JSONDecodeError, ValueError, TypeError):
+                    pass
+
                 raise LlmProviderError(
                     f"HTTP {resp.status_code} calling {url}. "
-                    f"Body (first 2000 chars): {snippet}"
+                    f"Body (first 2000 chars): {snippet}",
+                    user_message=user_msg
                 ) from e
 
             return resp

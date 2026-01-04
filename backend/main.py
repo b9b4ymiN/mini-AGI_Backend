@@ -7,13 +7,23 @@ Main entry point for the orchestration system.
 from dotenv import load_dotenv
 load_dotenv()
 
+import logging
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
 from .orchestrator.models import ChatRequest, ChatResponse
 from .orchestrator.core import orchestrate
-from .orchestrator.llm import get_provider_info
+from .orchestrator.llm import get_provider_info, LlmProviderError
 from .orchestrator.personas import get_persona_or_custom, get_available_personas
 from .orchestrator import memory, db_management
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Mini-AGI Backend",
@@ -100,20 +110,65 @@ def chat(req: ChatRequest) -> ChatResponse:
         last_user_msg = "No text content provided."
 
     # Run orchestration with memory and optional system instruction
-    answer, events, session_id, context_used = orchestrate(
-        user_input=last_user_msg,
-        system_instruction=system_instruction,
-        session_id=req.session_id,
-        user_id=req.user_id,
-        persona=req.persona
-    )
+    try:
+        answer, events, session_id, context_used = orchestrate(
+            user_input=last_user_msg,
+            system_instruction=system_instruction,
+            session_id=req.session_id,
+            user_id=req.user_id,
+            persona=req.persona
+        )
 
-    return ChatResponse(
-        answer=answer,
-        events=events,
-        session_id=session_id,
-        context_used=context_used
-    )
+        # Ensure answer is a string (defensive: avoid type issues)
+        if not isinstance(answer, str):
+            answer = str(answer)
+
+        response = ChatResponse(
+            answer=answer,
+            events=events,
+            session_id=session_id,
+            context_used=context_used
+        )
+
+        # Log response before returning (for debugging)
+        answer_preview = answer[:200] + "..." if len(answer) > 200 else answer
+        logger.info(f"Response to client: session_id={session_id}, context_used={context_used}, answer_preview={answer_preview}")
+        logger.info(f"Full response JSON: {response.model_dump_json()}")
+
+        return response
+
+    except LlmProviderError as e:
+        # Return user-friendly error message from the exception
+        response = ChatResponse(
+            answer=e.user_message,
+            events=[],
+            session_id=req.session_id or "",
+            context_used=False
+        )
+        logger.error(f"LlmProviderError: {response.model_dump_json()}")
+        return response
+
+    except ValidationError as e:
+        # Pydantic validation error - return error as JSON
+        response = ChatResponse(
+            answer="Validation error: Please try again.",
+            events=[],
+            session_id=req.session_id or "",
+            context_used=False
+        )
+        logger.error(f"ValidationError: {response.model_dump_json()}")
+        return response
+
+    except Exception as e:
+        # Catch-all for unexpected errors - return as JSON instead of crashing
+        response = ChatResponse(
+            answer=f"An error occurred: {str(e)}",
+            events=[],
+            session_id=req.session_id or "",
+            context_used=False
+        )
+        logger.error(f"Exception: {response.model_dump_json()}")
+        return response
 
 
 @app.get("/health")

@@ -33,7 +33,7 @@ services:
       # - ./backend:/app/backend
  
     networks:
-      - mini-agi-network
+      - web-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -46,8 +46,8 @@ services:
 # Networks
 # =============================================================================
 networks:
-  mini-agi-network:
-    driver: bridge
+  web-net:
+    external: true
 
 deploy:
   resources:
