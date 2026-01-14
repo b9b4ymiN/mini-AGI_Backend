@@ -1,13 +1,28 @@
 # =============================================================================
-# Docker Compose for Mini-AGI Backend - Production Configuration
+# Docker Compose for Mini-AGI Backend - Oracle Free Tier Optimized
 # =============================================================================
-# This file includes all services for a production deployment:
-# - Backend API (FastAPI)
+# Optimized for Oracle Cloud Free Tier (AMD: 1GB RAM / ARM: 24GB RAM)
+#
+# Services:
+# - Backend API (FastAPI) - Port 8000
 # - PostgreSQL (persistent database)
 # - Redis (caching and rate limiting)
-# - Ollama (optional LLM provider)
 # - Jaeger (optional distributed tracing)
 # - Prometheus (optional metrics collection)
+#
+# Container Names (v2 to avoid conflicts):
+# - mini-agi-backend
+# - mini-agi-postgres-v2
+# - mini-agi-redis-v2
+#
+# Memory Usage (Total ~448MB):
+# - Backend: 256MB
+# - PostgreSQL: 128MB
+# - Redis: 64MB
+#
+# Requirements:
+# - Create web-net network first: docker network create web-net
+# - Set ZAI_API_KEY in .env for LLM functionality
 # =============================================================================
 
 services:
@@ -23,13 +38,10 @@ services:
       - "${BACKEND_PORT:-8000}:8000"
     environment:
       # LLM Provider Configuration
-      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
-      - LLM_MODEL=${LLM_MODEL:-llama3.1:8b}
+      - LLM_PROVIDER=${LLM_PROVIDER:-zai}
+      - LLM_MODEL=${LLM_MODEL:-glm-4.6}
       - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.2}
       - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-8000}
-
-      # Ollama Configuration
-      - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
 
       # Z.AI Configuration
       - ZAI_API_KEY=${ZAI_API_KEY:-}
@@ -37,14 +49,14 @@ services:
 
       # Database Configuration
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-miniagi}:${POSTGRES_PASSWORD:-miniagi_pass}@postgres:5432/${POSTGRES_DB:-miniagi}
-      - DATABASE_POOL_SIZE=${DATABASE_POOL_SIZE:-10}
+      - DATABASE_POOL_SIZE=${DATABASE_POOL_SIZE:-3}
       - DATABASE_ECHO=false
 
       # Redis Configuration
       - REDIS_URL=redis://:${REDIS_PASSWORD:-}@redis:6379/0
       - CACHE_ENABLED=${CACHE_ENABLED:-true}
       - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-3600}
-      - REDIS_MAX_CONNECTIONS=${REDIS_MAX_CONNECTIONS:-10}
+      - REDIS_MAX_CONNECTIONS=${REDIS_MAX_CONNECTIONS:-3}
 
       # Security Configuration
       - API_KEYS=${API_KEYS:-dev-key-123456789}
@@ -81,10 +93,10 @@ services:
       # Mount instruction files for personas
       - ./backend/instruction:/app/backend/instruction:ro
       # Persistent data storage
-      - backend_data:/app/backend/data
+      - backend_data_v2:/app/backend/data
 
     networks:
-      - backend-net
+      - web-net
 
     depends_on:
       postgres:
@@ -104,27 +116,27 @@ services:
     deploy:
       resources:
         limits:
-          cpus: ${BACKEND_CPUS:-1}
-          memory: ${BACKEND_MEMORY:-1G}
+          cpus: ${BACKEND_CPUS:-0.5}
+          memory: ${BACKEND_MEMORY:-256M}
         reservations:
-          cpus: ${BACKEND_CPUS_RESERVE:-0.25}
-          memory: ${BACKEND_MEMORY_RESERVE:-256M}
+          cpus: ${BACKEND_CPUS_RESERVE:-0.1}
+          memory: ${BACKEND_MEMORY_RESERVE:-128M}
 
   # ---------------------------------------------------------------------------
   # PostgreSQL Database
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
-    container_name: mini-agi-postgres
+    container_name: mini-agi-postgres-v2
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-miniagi}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-miniagi_pass}
       - POSTGRES_DB=${POSTGRES_DB:-miniagi}
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_v2:/var/lib/postgresql/data
     networks:
-      - backend-net
+      - web-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-miniagi}"]
@@ -134,20 +146,20 @@ services:
     deploy:
       resources:
         limits:
-          cpus: ${POSTGRES_CPUS:-0.5}
-          memory: ${POSTGRES_MEMORY:-512M}
+          cpus: ${POSTGRES_CPUS:-0.25}
+          memory: ${POSTGRES_MEMORY:-128M}
 
   # ---------------------------------------------------------------------------
   # Redis Cache
   # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
-    container_name: mini-agi-redis
-    command: redis-server --appendonly yes --maxmemory ${REDIS_MAX_MEMORY:-256mb} --maxmemory-policy allkeys-lru
+    container_name: mini-agi-redis-v2
+    command: redis-server --appendonly yes --maxmemory ${REDIS_MAX_MEMORY:-64mb} --maxmemory-policy allkeys-lru
     volumes:
-      - redis_data:/data
+      - redis_data_v2:/data
     networks:
-      - backend-net
+      - web-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -157,35 +169,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: ${REDIS_CPUS:-0.25}
-          memory: ${REDIS_MEMORY:-256M}
-
-  # ---------------------------------------------------------------------------
-  # Ollama LLM Provider (optional)
-  # ---------------------------------------------------------------------------
-  ollama:
-    image: ollama/ollama:latest
-    container_name: mini-agi-ollama
-    ports:
-      - "${OLLAMA_PORT:-11434}:11434"
-    environment:
-      - OLLAMA_ORIGINS=${OLLAMA_ORIGINS:-*}
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - backend-net
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: ${OLLAMA_CPUS:-2}
-          memory: ${OLLAMA_MEMORY:-4G}
-        reservations:
-          cpus: ${OLLAMA_CPUS_RESERVE:-0.5}
-          memory: ${OLLAMA_MEMORY_RESERVE:-2G}
-    # GPU support (uncomment if host has NVIDIA GPU)
-    # deploy:
-    #   runtime: nvidia
+          cpus: ${REDIS_CPUS:-0.1}
+          memory: ${REDIS_MEMORY:-64M}
 
   # ---------------------------------------------------------------------------
   # Jaeger Distributed Tracing (optional)
@@ -206,7 +191,7 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
       - COLLECTOR_ZIPKIN_HOST_PORT=:9411
     networks:
-      - backend-net
+      - web-net
     restart: unless-stopped
     profiles:
       - tracing
@@ -221,7 +206,7 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+      - prometheus_data_v2:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -230,7 +215,7 @@ services:
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
     networks:
-      - backend-net
+      - web-net
     restart: unless-stopped
     profiles:
       - metrics
@@ -241,20 +226,18 @@ services:
 # Networks
 # =============================================================================
 networks:
-  backend-net:
-    driver: bridge
+  web-net:
+    external: true
 
 # =============================================================================
 # Volumes
 # =============================================================================
 volumes:
-  postgres_data:
+  postgres_data_v2:
     driver: local
-  redis_data:
+  redis_data_v2:
     driver: local
-  ollama_data:
+  backend_data_v2:
     driver: local
-  backend_data:
-    driver: local
-  prometheus_data:
+  prometheus_data_v2:
     driver: local
